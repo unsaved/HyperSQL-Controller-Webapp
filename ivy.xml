@@ -19,7 +19,11 @@
   <dependencies defaultconfmapping="baseconf->default">
     <dependency org="javax.servlet" name="servlet-api" rev="2.5"
                 transitive="false" conf="build->default"/>
-    <dependency org="org.hsqldb" name="hsqldb" rev="2.0.0"
+    <!-- WARNING:  Until hsqldb-2.1.1.jar is released, you will need to obtain
+         a snapshot jar from http://hsqldb.org or build from Subversion.
+         Set Ant property JAR_REPOS_URL to the file: URL of your local
+         directory that contains "hsqldb-2.1.1-SNAPSHOT.jar". -->
+    <dependency org="org.hsqldb" name="hsqldb" rev="2.1.1-SNAPSHOT"
                 conf="build->default" transitive="false"/>
   </dependencies>
 </ivy-module>

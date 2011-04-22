@@ -33,8 +33,9 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.ServletContext;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
-import org.hsqldb.persist.HsqlProperties;
 import org.hsqldb.server.Server;
+import org.hsqldb.server.ServerProperties;
+import org.hsqldb.server.ServerConstants;
 import org.hsqldb.server.ServerAcl.AclFormatException;
 
 public class HsqldbControl implements ServletContextListener {
@@ -94,7 +95,7 @@ public class HsqldbControl implements ServletContextListener {
                     + "'hsqldb.server.propertiespath' init property is set");
                 return;
             }
-            String s= inPropPath.trim();
+            String s = inPropPath.trim();
             Matcher matcher = sysPropVarPattern.matcher(s);
             int previousEnd = 0;
             StringBuilder sb = new StringBuilder();
@@ -125,12 +126,9 @@ public class HsqldbControl implements ServletContextListener {
                         "Specified 'hsqldb.server.propertiespath' not "
                         + "absolute: " + propPath);
 
-            String propFilePath = propFile.getAbsolutePath();
             server = new Server();
-            HsqlProperties props = new HsqlProperties(propFilePath.substring(
-                    0, propFilePath.length() - ".properties".length()));
-            props.load();
-            server.setProperties(props);
+            server.setProperties(new ServerProperties(
+                    ServerConstants.SC_PROTOCOL_HSQL, propFile));
             server.start();
         } catch (Exception e) {
             application.log("Fatal failure to initialize HyperSQL.  "

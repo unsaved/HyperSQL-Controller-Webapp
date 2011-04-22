@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ - Copyright 2011 Axis Data Management Corp.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ - http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+
+ Main purpose is to load a HsqldbControl ServletContextListener, which can
+ start+stop a HyperSQL Network Listener and/or gracefully shut down Hsqldb
+ instances upon app server shutdown.
+
+ To trigger start+stop of a HyperSQL Network Listener, set init parameter
+ 'hsqldb.server.propertiespath' as shown below, or set the same property using
+ your app server's hooks for runtime property settings.
+
+ To trigger shutdown of HyperSQL Database Instances, define resource references
+ with JNDI names like java:comp/env/hsqldbDsAutostop/1,
+ java:comp/env/hsqldbDsAutostop/2, etc.
+ You can define these either in this file + app-server-specific deployment
+ files (like WebLogic's "weblogix.xml"); or use your app server's hooks for
+ runtime property settings.
+
+ Tomcat users, in particular can make these settings much easier with a
+ context.xml file.  A sample comes with the hsqldbController distribution.
+-->
+
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+  version="2.5">
+
+  <display-name>HyperSQL Controller</display-name>
+
+    <!--  If you use app server hooks for setting hsqldb.server.propertiespath,
+          then you don't have to modify this application at all.
+          The value may contain system properties in the form ${...}.
+          (This is not a general web.xml or Servlet spec feature, but is a
+          feature of the HsqldbControl class).
+          If you 
+  <context-param>
+    <description>
+      Absolute path to HyperSQL Server Properties file
+    </description>
+    <param-name>hsqldb.server.propertiespath</param-name>
+    <param-value>${user.home}/hsqldb-server.properties</param-value>
+  </context-param>
+    -->
+
+  <listener>
+    <listener-class>com.admc.web.HsqldbControl</listener-class>
+  </listener>
+
+  <!--  If you use app server hooks for setting these resource refs,
+        then you don't have to modify this application at all.
+        Note that this defines just the required reference name, but you will
+        need an appserver-specific file to link these refs to the
+        container-managed data sources.
+  <resource-ref>
+    <description>
+      Ref. to 1st container data source to be auto shut down
+    </description>
+    <res-ref-name>hsqldbDsAutostop/1</res-ref-name>
+    <res-type>javax.sql.DataSource</res-type>
+    <res-auth>Container</res-auth>
+  </resource-ref>
+  -->
+</web-app>

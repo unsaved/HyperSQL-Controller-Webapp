@@ -1,0 +1,216 @@
+<project name='hsqldbController' default='explode'
+         xmlns:ivy="antlib:org.apache.ivy.ant">
+  <!-- As noted elsewhere, in most cases, application integrators should move
+       the TLD file and needed webapp-base classes and resources into a
+       custom-build webapp-base library jar file, and add this jar file to
+       WEB-INF/lib of their web app. -->
+
+  <property file="local.properties"/>
+  <property file="app.properties"/>
+  <property name="javac.sourceVersion" value="1.5"/>
+  <property name="javac.targetVersion" value="${javac.sourceVersion}"/>
+  <property name="javac.debug" value="true"/>
+  <property name="deployment.pause" value="10"/>
+  <!-- exploded.suffix is provided for deploying to local application servers
+       that have the crazy and misleading convention of naming directories
+       with extensions like ".war", ".ear", as if they were files. -->
+  <property name="explode.suffix" value=""/>
+  <!-- Using property for tmp directory as a work-around for Window's totally
+       inept non-handling of file locks.
+       If you try to build on Windows and get "Access is denied." errors, set
+       webapp.tmpdir to another directory like "tmp1", then "tmp2", etc.
+       It is a hack, but no more of a hack than your operating system.
+  -->
+  <property name="webapp.tmpdir" value="tmp"/>
+
+  <import file="ivy-projsetup.xml" />
+
+  <target name="clean" description="Clean">
+    <delete dir="dist"/>
+    <delete dir="classes"/>
+    <delete dir="${webapp.tmpdir}"/>
+  </target>
+
+  <target name="-condl-depdir-del" if="deploy.dir">
+    <delete file="${deploy.dir}/${ant.project.name}.war"/>
+  </target>
+
+  <target name="undeploy" description="Remove deployment from local deploy dir"
+          depends="-derive-deploy.explode.dir, -condl-depdir-del">
+    <fail unless="deploy.explode.dir"
+          message="Property 'deploy.dir' or 'deploy.explode.dir' is required"/>
+    <delete dir="${deploy.explode.dir}/${ant.project.name}${explode.suffix}"/>
+  </target>
+
+  <target name="-derive-deploy.explode.dir"
+          if="deploy.dir" unless="deploy.explode.dir">
+    <property name="deploy.explode.dir" value="${deploy.dir}"/>
+  </target>
+
+  <target name="reexplode" depends="undeploy"
+          description="Redeploy in exploded form">
+    <!-- app server needs time to handle undeploy -->
+    <sleep seconds="${deployment.pause}"/>
+    <antcall target="explode"/>
+  </target>
+  <target name="redeploy" depends="undeploy" description="Redeploy">
+    <!-- app server needs time to handle undeploy -->
+    <sleep seconds="${deployment.pause}"/>
+    <antcall target="deploy"/>
+  </target>
+
+  <!--
+    This target is also very useful for remote war deployments.
+    Just set deploy.dir to any convenient local directory, and then either
+    file-transfer or use your app-server-specific deployment facility to deploy
+    the war file from there after running this task.
+    -->
+  <target name="deploy" depends="war"
+          description="Copies war to a local dir. with version label stripped">
+    <fail unless="deploy.dir" message="Property 'deploy.dir' is required"/>
+    <copy file="dist/${ant.project.name}-${version}.war"
+          tofile="${deploy.dir}/${ant.project.name}.war" />
+  </target>
+
+  <target name="war" depends="compile" description="Build war file">
+    <ivy:cachefileset conf="bundle" setid="bundle.ivyrefid"/>
+    <mkdir dir='dist'/>
+    <war destfile="dist/${ant.project.name}-${version}.war"
+         webxml="config/web.xml">
+      <classes dir='src' excludes='**/*.java, **/.*'/>
+      <classes dir='classes'/>
+      <webinf dir="config" excludes="web.xml, context.xml, **/.*"/>
+      <lib refid="bundle.ivyrefid"/>
+      <!--  The default supplied file has no effect effect at all.
+            Deploying as a war file to Tomcat will cause a copy of the file
+            to be copied to 
+            "$CATALINA_BASE/conf/Catalina/localhost/<APPNAME>.xml".
+            Deployers may edit the file there or as "context.xml" under the
+            deployment directory, then restart... for example to set override
+            application init properties in web.xml. -->
+      <metainf dir="config" includes="context.xml"/>
+    </war>
+    <condition property="_isunix">
+      <os family="unix"/>
+    </condition>
+    <available property="_link.present" file="dist/${ant.project.name}.war"
+               type="file"/>
+    <antcall target="-mkcp"/>
+    <antcall target="-mklink"/>
+  </target>
+
+  <target name="-mklink" if="_isunix" unless="_link.present">
+    <!-- TODO:  Need to test whether this works with Cygwin, and
+         accommodate if necessary -->
+    <echo>Creating deployment sym-link so deployed app will be
+named '${ant.project.name}'</echo>
+    <exec executable="ln" failonerror="true">
+      <arg value="-s"/>
+      <arg value="${ant.project.name}-${version}.war"/>
+      <arg value="dist/${ant.project.name}.war"/>
+    </exec>
+  </target>
+
+  <target name="-mkcp" unless="_isunix">
+    <!-- TODO:  Need to test whether this works with Cygwin, and
+         accommodate if necessary -->
+    <echo>Creating war copy so deployed app will be
+named '${ant.project.name}'</echo>
+    <copy preservelastmodified="true"
+          file="dist/${ant.project.name}-${version}.war"
+          tofile="dist/${ant.project.name}.war"/>
+  </target>
+
+  <target name="explode" depends="-derive-deploy.explode.dir, war"
+          description="Deploy to local app servr in exploded form">
+    <fail unless="deploy.explode.dir"
+          message="Property 'deploy.dir' or 'deploy.explode.dir' is required"/>
+    <unzip dest="${deploy.explode.dir}/${ant.project.name}${explode.suffix}"
+           src="dist/${ant.project.name}-${version}.war"/>
+    <touch file="${deploy.explode.dir}/${ant.project.name}${explode.suffix}/WEB-INF/web.xml"/>
+  </target>
+
+  <target name="compile" description="compile Java sources"
+          depends="-ivy-setup">
+    <ivy:cachepath conf="build" pathid="build.ivyrefid"/>
+    <mkdir dir="classes"/>
+    <javac srcdir="src" destdir="classes" classpathref="build.ivyrefid"
+           source="${javac.sourceVersion}" target="${javac.targetVersion}"
+           deprecation="${javac.deprecation}" debug="${javac.debug}">
+      <compilerarg value="-Xlint"/>
+    </javac>
+  </target>
+
+  <target name="src-dist" description="Build source distribution zip file">
+    <mkdir dir="dist"/>
+    <zip destfile="dist/${ant.project.name}-${version}-src.zip"
+         filesonly="true" whenempty="fail">
+      <zipfileset prefix="${ant.project.name}-${version}"
+                  dir="." excludes="**/.*" includes="
+        app.properties, boot-libs/**, build.xml, config/**, ivy.xml,
+        ivy-projsetup.xml, template*/**, src/**, doc/*
+      "/>
+      <zipfileset prefix="${ant.project.name}-${version}"
+                  dir="dist" excludes="**/.*" includes="apidocs/**"/>
+    </zip>
+  </target>
+
+  <target name="serialver" depends="compile"
+          description="generate Java serial version">
+    <fail unless="className" message="Property 'className required"/>
+    <ivy:cachefileset conf="build" setid="bundle.refid"/>
+    <pathconvert property="cPath" refid="bundle.refid"/>
+    <exec executable="serialver" failonerror="true">
+      <arg value="-classpath"/>
+      <arg value="classes${path.separator}${cPath}"/>
+      <arg value="${className}"/>
+    </exec>
+  </target>
+
+  <target name="publish" depends="clean, src-dist, -ivy-setup, war"
+          description="Publish just the distributables">
+    <!-- This is quick and dirty.
+         Rsync will probably not be available to Windows users, so there isn't
+         much point in me making this platform-independent. -->
+    <fail unless="publish.dest"
+          message="Ant property 'publish.dest' is required"/>
+    <available type="file" file="dist/${ant.project.name}-${version}-src.zip"
+               property="_src.dist.present"/>
+    <fail unless="_src.dist.present"
+          message="Seems that the source-dist target failed."/>
+    <exec executable="rsync" failonerror="true">
+      <!-- PURPOSEFULLY NOT SETTING rsync delete SWITCH FOR TRUE MIRRORING.
+           We are only adding or overwriting artifacts for our specific
+           $version. -->
+      <arg value="-avzH"/>
+      <arg value="-f"/>
+      <arg value="- apidocs"/>
+      <arg value="dist/"/>
+      <arg value="${publish.dest}"/>
+    </exec>
+  </target>
+
+  <target name="constrain-tabs" description="Ensure no tabs in text files">
+    <pathconvert property="tabbedFiles" pathsep=",">
+      <fileset dir="content" excludes="**/.*"
+               includes="**/*.css, **/*.js, **/*.jsp, **/*.html">
+        <contains text="&#9;"/>
+      </fileset>
+      <fileset dir="internal" excludes="**/.*"
+               includes="**/*.css, **/*.js, **/*.jsp, **/*.html">
+        <contains text="&#9;"/>
+      </fileset>
+      <!-- Copy the block above if you have a resources or other directory that
+           also contains text filej. -->
+      <fileset dir="." excludes="**/.*" includes="src/**, doc/**">
+        <contains text="&#9;"/>
+      </fileset>
+    </pathconvert>
+    <fail message="Files contain tabs: ${tabbedFiles}">
+      <condition><not>
+        <equals arg1="" arg2="${tabbedFiles}"/>
+      </not></condition>
+    </fail>
+  </target>
+
+</project>

@@ -1,0 +1,25 @@
+<ivy-module version="2.0">
+  <!-- The configuration here could be simplified greatly by using default Ivy
+       transitive dependencies.  I have disabled that so that you can see each
+       and every dependency. -->
+
+  <!-- Not pulling in HyperSQL through Ivy and Maven, because as I am coding
+       this example, the HyperSQL LDAP features are not available in Maven yet.
+  -->
+
+  <info organisation="admc.com" module="hsqldbController"/>
+  <configurations>
+    <conf name="baseconf" visibility="private"
+          description="Dependencies which hold for all other confs"/>
+    <conf name="build" description="Dependencies for compiling"
+          extends="baseconf" visibility="private"/>
+    <conf name="bundle" description="Dependencies for running"
+          extends="baseconf" visibility="private"/>
+  </configurations>
+  <dependencies defaultconfmapping="baseconf->default">
+    <dependency org="javax.servlet" name="servlet-api" rev="2.5"
+                transitive="false" conf="build->default"/>
+    <dependency org="org.hsqldb" name="hsqldb" rev="2.0.0"
+                conf="build->default" transitive="false"/>
+  </dependencies>
+</ivy-module>

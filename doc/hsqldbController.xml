@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+     This is a runtime config file for Tomcat.
+     If you have no other need to modify this web app, then just copy this
+     file into the $CATALINA_BASE/conf/Catalina/localhost directory.
+     (Restart Tomcat if it wasn't running.  You can put this file in place
+     either before or after deploying the war.)
+
+     Default behavior of these files has changed with Tomcat 7.  To honor
+     files in $CATALINA_BASE/conf/Catalina/localhost with Tomcat 7 and later,
+     you must add attribute 'copyXML="true"' to your server.xml file (and
+     restart Tomcat).
+
+     You can alternatively rebundle the war file with this file moved to
+     "/META-INF/context.xml" within the war file.  The contents of that file
+     will take precedence.
+     In all cases, if you make the corresponding settings in your web.xml,
+     these runtime settings will be ignored.
+-->
+
+<Context>
+  <!-- Use this parameter to run a HyperSQL Listener.
+       The value is the path to your HyperSQL Listener properties file.  -->
+  <Parameter name="hsqldb.server.propertiespath"
+             value="${catalina.base}/hsqldbserver.properties"/>
+
+  <!-- To automatically stop HyperSQL Database Instances, add a ResourceLink
+       referring to each container-managed HyperSQL data source.  Start the
+       counter with 1 and increment for each additional one you need.
+       Each global value here must be the JNDI name, relative to java:comp/env,
+       of a global data source defined in server.xml (directly or indirectly).
+  -->
+  <ResourceLink name="hsqldbDsAutostop/1"
+                global="jdbc/first" type="javax.sql.DataSource"/>
+  <ResourceLink name="hsqldbDsAutostop/2"
+                global="jdbc/second" type="javax.sql.DataSource"/>
+</Context>

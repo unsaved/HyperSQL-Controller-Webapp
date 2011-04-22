@@ -1,0 +1,23 @@
+<ivysettings>
+
+<caches checkUpToDate="false" defaultCacheDir="${file.separator}/"
+        resolutionCacheDir="${RESO_CACHEDIR}"
+        ivyPattern="[module]-[revision].xml"
+        repositoryCacheDir="${REPO_CACHEDIR}"
+        artifactPattern="[artifact]-[revision].[ext]"/>
+
+<settings defaultResolver="default"/>
+
+<resolvers>
+  <chain name="default" returnFirst="true" dual="true">
+    <!-- This first because if the JAR_REPOS has not been set it will fail
+         fase (if it is set to an unavailable site, it will pause just like
+         the maven lookup will). -->
+    <url name="jarrepos-resolver">
+      <artifact pattern="${JAR_REPOS_URL}/[artifact]-[revision].[ext]"/>
+    </url>
+    <ibiblio name="ibiblio" m2compatible="true"/>
+  </chain>
+</resolvers>
+
+</ivysettings>

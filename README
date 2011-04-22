@@ -1,0 +1,33 @@
+HyperSQL Controller Webapp
+
+This web application is only for deployment in app servers that have
+container-managed HyperSQL data sources.  Most app servers do not have
+facilities to startup a HyperSQL Listener or to gracefully shut down the
+data servers when the app server shuts down.  This app does both of these
+things.
+
+The deliverable is the war file "hsqldbController-*.war".  Download the file,
+rename it to "hsqldbController.war"  (i.e. remove the version suffix) and
+deploy.
+Use your container facilities to set a servlet context init parameter and/or
+data source resource references to specify whether to run a HyperSQL Listener
+and which data sources (or none) to automatically shut down.
+
+Tomcat users should see the sample context file in the doc  directory of this
+project.
+
+Users of any application server can use server facilities to set
+
+    + init parameter "hsqldb.server.propertiespath" to the absolute path to
+      a HyperSQL Listener properties file
+
+and/or
+
+    + resource references to each data source to auto-shutdown, with JNDI
+      names "java:comp/env/hsqldbDsAutostop/1",
+      "java:comp/env/hsqldbDsAutostop/2", etc.
+
+OR
+
+    Edit this web app's "web.xml" file according to the instructions to
+    accomplish the same thing.
